@@ -1,0 +1,24 @@
+2023-10-14 23:37:27,451 - INFO - Finding element Google Input Field
+2023-10-14 23:37:28,088 - INFO - Finding element Google Search Button
+2023-10-14 23:37:29,593 - INFO - Waiting until Search Field is located
+2023-10-14 23:37:29,602 - INFO - Search Field is located
+2023-10-14 23:37:31,789 - INFO - 127.0.0.1 - - [14/Oct/2023 23:37:31] "GET /automate_job HTTP/1.1" 200 -
+2023-10-14 23:38:14,857 - INFO -  * Detected change in 'c:\\Users\\A4797\\OneDrive - Axtria\\Documents\\VSCode\\Projects\\Python\\WebAutomation\\services\\web_automation.py', reloading
+2023-10-14 23:38:29,693 - INFO - Finding element Google Input Field
+2023-10-14 23:38:35,862 - INFO - Finding element Google Search Button
+2023-10-14 23:38:39,941 - INFO - Waiting until Search Field is located
+2023-10-14 23:38:39,955 - INFO - Search Field is located
+2023-10-14 23:38:42,361 - INFO - 127.0.0.1 - - [14/Oct/2023 23:38:42] "GET /automate_job HTTP/1.1" 200 -
+2023-10-14 23:40:20,570 - INFO - Finding element Google Input Field
+2023-10-14 23:40:26,745 - INFO - Finding element Google Search Button
+2023-10-14 23:40:30,013 - INFO - Waiting until Search Field is located
+2023-10-14 23:40:30,028 - INFO - Search Field is located
+2023-10-14 23:40:32,171 - INFO - 127.0.0.1 - - [14/Oct/2023 23:40:32] "GET /automate_job HTTP/1.1" 200 -
+2023-10-14 23:51:41,152 - INFO - Finding element Google Input Field
+2023-10-14 23:51:44,262 - INFO - Sending Input Selenium
+2023-10-14 23:51:47,321 - INFO - Finding element Google Search Button
+2023-10-14 23:51:47,507 - INFO - The button is clicked
+2023-10-14 23:51:50,570 - INFO - Waiting until Search Field is located
+2023-10-14 23:51:50,578 - INFO - Search Field is located
+2023-10-14 23:51:53,832 - INFO - 127.0.0.1 - - [14/Oct/2023 23:51:53] "GET /automate_job HTTP/1.1" 200 -
+2023-10-14 23:52:19,182 - INFO -  * Detected change in 'c:\\Users\\A4797\\OneDrive - Axtria\\Documents\\VSCode\\Projects\\Python\\WebAutomation\\services\\helpers.py', reloading
