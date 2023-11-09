@@ -1,0 +1,14 @@
+:host {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.sidebar {
+    z-index: 5;
+    color: white;
+    width: 48px;
+    display: flex;
+    height: calc(100vh - 100px);
+    transition: width 0.5s ease-in-out;
+}
