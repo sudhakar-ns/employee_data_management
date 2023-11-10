@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { SharedService } from '../shared.service';
+import { SharedService } from '../service/shared.service';
 
 @Component({
   selector: 'app-header',
@@ -12,7 +12,7 @@ export class HeaderComponent {
   constructor(public sharedService: SharedService) { }
   toggleSidebar() {
     this.sharedService.isExpanded = !this.sharedService.isExpanded;
-    if (this.sharedService.isExpanded) this.sharedService.sidebarWidth = '100px';
-    else this.sharedService.sidebarWidth = '48px';
+    if (this.sharedService.isExpanded) this.sharedService.sidebarWidth = '160px';
+    else this.sharedService.sidebarWidth = '64px';
   }
 }

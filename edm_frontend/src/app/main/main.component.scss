@@ -1,0 +1,21 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  margin-bottom: 48px;
+}
+
+::ng-deep {
+  .employee-table thead {
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 1;
+  }
+}
+
+
+.disable-input {
+  opacity: 0.5;
+  pointer-events: none;
+}

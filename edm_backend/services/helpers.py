@@ -1,105 +1,157 @@
-import traceback
-from logging import Logger
-from config import WAIT_THRESHOLD
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.chrome.webdriver import WebDriver
-from selenium.webdriver.remote.webelement import WebElement
-from selenium.webdriver.support import expected_conditions as EC
 
 
-def get_error_line(e) -> dict:
-    tb = traceback.extract_tb(e.__traceback__)
-    file_name, line_number, function_name, text = tb[-1]
-    return {
-        "file_name": file_name,
-        "function_name": function_name,
-        "text": text,
-        "line_number": line_number,
-    }
+import json
+from flask import Response, jsonify, request
+from config import SQL_ALCHEMY_URI
+from services.db import AppDb
+
+from sqlalchemy import Engine, Insert, Select, Update, create_engine, MetaData, Table, delete, update
+from sqlalchemy.sql import select
+
+# Create a MetaData instance
+metadata = MetaData(schema="system_config")
 
 
-def resolve_path(path: str) -> By:
-    path_mapping = {
-        "id": By.ID,
-        "xpath": By.XPATH,
-        "link_text": By.LINK_TEXT,
-        "partial_link_text": By.PARTIAL_LINK_TEXT,
-        "name": By.NAME,
-        "tag_name": By.TAG_NAME,
-        "class_name": By.CLASS_NAME,
-        "css_selector": By.CSS_SELECTOR,
-    }
+def create_postgres_engine():
+    return create_engine(SQL_ALCHEMY_URI, isolation_level='AUTOCOMMIT', pool_size=10)
+
+
+def execute_query(engine: Engine, obj: Select | Update):
+    with engine.connect() as connection:
+        result = connection.execute(obj)
+        data = [dict(row) for row in result.mappings()]
+        return data
+
+
+def read_org_data() -> Response:
     try:
-        return path_mapping[path.lower()]
-    except KeyError:
-        raise ValueError(f"Unrecognized path: {path}")
-
-
-def unpack_values(element: dict) -> tuple:
-    path = element.get("path")
-    path = resolve_path(path)
-    value = element.get("value")
-    type = element.get("type")
-    name = element.get("name")
-    return (name, type, value, path)
-
-
-def dynamic_wait(wat: dict, element: dict):
-    _, type, value, path = unpack_values(element)
-    driver: WebDriver = wat.get("driver")
-    web_driver_wait = WebDriverWait(driver, WAIT_THRESHOLD)
-    if type == 'input': web_driver_wait.until(EC.visibility_of_element_located((path, value)))
-    elif type == 'button': web_driver_wait.until(EC.element_to_be_clickable((path, value)))
-
-
-def find_element_path(wat: dict, element: dict) -> WebElement:
-    try:
-        name, _, value, path = unpack_values(element)
-        driver: WebDriver = wat.get("driver")
-        lgr: Logger = wat.get("lgr")
-        dynamic_wait(wat, element)
-        lgr.info(f"Finding element {name}")
-        return driver.find_element(path, value)
+        engine = create_postgres_engine()
+        table = Table('organization', metadata, autoload_with=engine)
+        
+        # Create a Select object
+        select_obj = select(table)
+        data = execute_query(engine, select_obj)
+        return jsonify({"message": data}), 200
     except Exception as err:
-        print(element)
-        e = get_error_line(err)
-        lgr.error(f"While finding element {name} at line number {e['line_number']}")
+        print(err)
+        return jsonify({"message": "Error while fetching the record"}), 400
 
 
-def wait_for_element_to_load(wat: dict, element: dict) -> None:
+def read_emp_data() -> Response:
     try:
-        name, _, value, path = unpack_values(element)
-        driver: WebDriver = wat.get("driver")
-        lgr: Logger = wat.get("lgr")
-        dynamic_wait(wat, element)
-        web_driver_wait = WebDriverWait(driver, WAIT_THRESHOLD)
-        lgr.info(f"Waiting until {name} is located")
-        web_driver_wait.until(EC.presence_of_element_located((path, value)))
-        lgr.info(f"{name} is located")
+        engine = create_postgres_engine()
+        table = Table('employee', metadata, autoload_with=engine)
+
+        # Create a Select object
+        select_obj = select(table).order_by(table.c.emp_name)
+        data = execute_query(engine, select_obj)
+        return jsonify({"message": data}), 200
     except Exception as err:
-        e = get_error_line(err)
-        lgr.error(f"While trying to locate {name} at line number {e['line_number']}")
+        print(err)
+        return jsonify({"message": "Error while fetching the record"}), 400
 
 
-def send_keys(wat: dict, text: str) -> None:
+
+def add_new_employee() -> Response:
+    engine = create_postgres_engine()
+    connection = engine.connect()
     try:
-        element: WebElement = wat.get("element")
-        lgr: Logger = wat.get("lgr")
-        element.send_keys(text)
-        lgr.info(f"Sending Input '{text}'")
+        emp_data = request.get_json()
+        table = Table('employee', metadata, autoload_with=engine)
+        employee_data = {
+            "org_id": emp_data.get('org_id'),
+            "emp_id": emp_data.get('emp_id'),
+            "emp_name": emp_data.get('emp_name'),
+            "date_of_joining": emp_data.get('date_of_joining'),
+            "emp_role": emp_data.get('emp_role'),
+            "emp_location": emp_data.get('emp_location'),
+        }
+        # Create an Insert object
+        stmt = Insert(table).values(employee_data)
+
+        # Execute the statement
+        connection.execute(stmt)
+        update_org_count(org_id=emp_data.get('org_id'), employees_count=emp_data.get('employees_count')+1)
+        return jsonify({"message": "Employee added successfully"}), 200
     except Exception as err:
-        e = get_error_line(err)
-        lgr.error(f"While trying to input {text} at line number {e['line_number']}")
+        print(err) 
+        connection.rollback()
+        return jsonify({"message": "Error while adding a new employee"}), 400
+    finally: connection.close()
+    
 
 
-def click_button(wat: dict) -> None:
+def update_org_count(org_id: str, employees_count: int):
     try:
-        element: WebElement = wat.get("element")
-        lgr: Logger = wat.get("lgr")
-        element.click()
-        lgr.info(f"The button is clicked")
-    except Exception as err:
-        e = get_error_line(err)
-        lgr.error(f"While trying to click the button at line number {e['line_number']}")
+        engine = create_postgres_engine()
+        table = Table('organization', metadata, autoload_with=engine)
+        stmt = (
+            update(table).
+            where(table.c.org_id == org_id).
+            values(employees_count = employees_count)
+        )
+        
+        with engine.connect() as connection: connection.execute(stmt)
+    except Exception as err: print(err)
 
+
+
+def update_emp_data() -> Response:
+    engine = create_postgres_engine()
+    connection = engine.connect()
+    res_msg = None
+    res_code = 200
+    try:
+        # Get the data from the request's JSON
+        emp_data = request.get_json()
+        table = Table('employee', metadata, autoload_with=engine)
+        employee_data = {
+            "org_id": emp_data.get('org_id'),
+            "emp_id": emp_data.get('emp_id'),
+            "emp_name": emp_data.get('emp_name'),
+            "date_of_joining": emp_data.get('date_of_joining'),
+            "emp_role": emp_data.get('emp_role'),
+            "emp_location": emp_data.get('emp_location'),
+        }
+        stmt = (
+            update(table).
+            where(table.c.emp_id == emp_data.get('emp_id')).
+            values(**employee_data)
+        )
+        
+        with engine.connect() as connection:
+            connection.execute(stmt)
+        
+        res_msg = jsonify({"message": "Employee updated successfully"})
+    except Exception as err:
+        print(err) 
+        connection.rollback()
+        res_msg = jsonify({"message": "Error while updating an employee"})
+        res_code = 400
+    finally: 
+        connection.close()
+        return res_msg, res_code
+
+
+def delete_emp_data():
+    engine = create_postgres_engine()
+    connection = engine.connect()
+    res_msg = None
+    res_code = 200
+    try:
+        # Get the data from the request's JSON
+        emp_data = request.get_json()
+        table = Table('employee', metadata, autoload_with=engine)
+        stmt = delete(table).where(table.c.emp_id == emp_data.get('emp_id'))
+        
+        with engine.connect() as connection: connection.execute(stmt)
+        update_org_count(org_id=emp_data.get('org_id'), employees_count=emp_data.get('employees_count')-1)
+        res_msg = jsonify({"message": "Employee record deleted successfully"})
+    except Exception as err:
+        print(err) 
+        connection.rollback()
+        res_msg = jsonify({"message": "Error while deleting the employee record"})
+        res_code = 400
+    finally: 
+        connection.close()
+        return res_msg, res_code

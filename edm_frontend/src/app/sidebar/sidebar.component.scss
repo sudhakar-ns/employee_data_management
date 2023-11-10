@@ -7,8 +7,8 @@
 .sidebar {
     z-index: 5;
     color: white;
-    width: 48px;
+    width: 64px;
     display: flex;
-    height: calc(100vh - 100px);
+    height: calc(100vh - 64px);
     transition: width 0.5s ease-in-out;
 }

@@ -5,7 +5,7 @@ import { Injectable } from '@angular/core';
 })
 export class SharedService {
   public isExpanded: boolean = false;
-  public sidebarWidth = '48px';
+  public sidebarWidth = '64px';
   constructor() { }
-  
+
 }

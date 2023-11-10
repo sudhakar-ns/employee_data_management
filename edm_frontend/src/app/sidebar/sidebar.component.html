@@ -1,14 +1,20 @@
 <div class="sidebar d-flex bg-teal-color z-index-1" [style.width]="sharedService.sidebarWidth">
-    <div class="sidebar-logos d-flex flex-column justify-content-between">
-        <div class="d-flex flex-column">
-            <span>
-                <img width="40px" height="40px" routerLink="/home" class="mt-2" src="../../assets/img/home.png" alt="">
-                <span class="m-2" *ngIf="sharedService.isExpanded">Home</span>
-            </span>
-            <span>
-                <img width="40px" height="40px" routerLink="/main" class="mt-2" src="../../assets/img/home.png" alt="">
-                <span class="m-2" *ngIf="sharedService.isExpanded">Lmao</span>
-            </span>
-        </div>
+  <div class="sidebar-logos d-flex flex-grow-1 flex-column justify-content-between align-items-center">
+    <div class="d-flex flex-column">
+      <span class="d-flex align-items-center c-pointer" routerLink="/home" >
+        <button mat-icon-button class="example-icon favorite-icon"
+          aria-label="Example icon-button with heart icon">
+          <mat-icon class="c-pointer">home</mat-icon>
+        </button>
+        <span class="mt-2" *ngIf="sharedService.isExpanded">Home</span>
+      </span>
+      <span class="d-flex align-items-center c-pointer" routerLink="/main">
+        <button mat-icon-button class="example-icon favorite-icon"
+          aria-label="Example icon-button with heart icon">
+          <mat-icon class="c-pointer">dashboard</mat-icon>
+        </button>
+        <span class="mt-2" *ngIf="sharedService.isExpanded">Dashboard</span>
+      </span>
     </div>
+  </div>
 </div>

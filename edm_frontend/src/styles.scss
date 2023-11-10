@@ -1,7 +1,14 @@
 /* You can add global styles to this file, and also import other style files */
 
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+html,
+body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: Roboto, "Helvetica Neue", sans-serif;
+}
 
 .header-footer {
     color: white;
@@ -9,7 +16,7 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
 }
 
 .bg-teal-color {
-    background-color: #7dadb8;
+    background-color: #3f51b5;
 }
 
 .mainContent {
@@ -17,4 +24,8 @@ body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
     overflow-y: auto;
     width: 100vw;
     height: calc(100vh - 100px);
+}
+
+.c-pointer {
+    cursor: pointer;
 }

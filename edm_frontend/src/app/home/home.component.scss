@@ -1,0 +1,22 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.dashboard-card {
+  width: 200px;
+  aspect-ratio: 1;
+
+  & .dashboard-icon {
+    display: flex;
+    font-size: 60px;
+    justify-content: center;
+    width: 72px;
+    height: 72px;
+  }
+
+  &:hover {
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+  }
+}
