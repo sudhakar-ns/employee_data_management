@@ -1,8 +1,45 @@
-# EdmFrontend
+# Employee Data Management
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 16.1.8.
+This project is an admin panel to manage organization and employee details by enabling admin users to be able to perform CRUD operations.
 
-## Development server
+# Pre-requisites
+
+1. Frontend - Angular
+2. Backend - Flask
+3. Database - Postgres
+
+# Steps to run
+
+1. Clone employee_data_management which contains both frontend and backend projects.
+2. Run both applications in different ports.
+3. Connect the backend application with the Postgres database.
+4. You are good to go :)!
+
+
+# Screenshots
+
+## Home Page
+
+![Home Page](https://github.com/sudhakar-ns/employee_data_management/assets/23113825/02e3f9cc-f88c-4786-9f9f-fd673f28d220)
+
+## Dashboard Page
+
+![Dashboard Page](https://github.com/sudhakar-ns/employee_data_management/assets/23113825/7dcd7bab-52ae-4042-9f21-6b9534874071)
+
+## Add Employee Modal
+
+![Add Employee Modal](https://github.com/sudhakar-ns/employee_data_management/assets/23113825/3afacc87-86e6-4ac8-add4-437bfa1e76ee)
+
+## Edit Employee Modal
+
+![Edit Employee Modal](https://github.com/sudhakar-ns/employee_data_management/assets/23113825/b6322f85-b9f8-452d-a83e-f26ab863bfe1)
+
+## Delete Employee Confirmation Modal
+
+![Delete Employee Confirmation Modal](https://github.com/sudhakar-ns/employee_data_management/assets/23113825/f6a50ff6-7914-4ba1-8e19-5c61e8caf7f0)
+
+
+# Development server
 
 Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
 
@@ -25,3 +62,5 @@ Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To u
 ## Further help
 
 To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+
+
