@@ -1,8 +1,7 @@
 # routes/main.py
-from flask import jsonify, Blueprint
+from flask import Blueprint
 
 from config import *
-import json
 from services.helpers import *
 
 edm_route = Blueprint('main', __name__)

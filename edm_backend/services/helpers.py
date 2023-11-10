@@ -1,12 +1,11 @@
 
 
-import json
 from flask import Response, jsonify, request
-from config import SQL_ALCHEMY_URI
-from services.db import AppDb
-
-from sqlalchemy import Engine, Insert, Select, Update, create_engine, MetaData, Table, delete, update
+from sqlalchemy import (Engine, Insert, MetaData, Select, Table, Update,
+                        create_engine, delete, update)
 from sqlalchemy.sql import select
+
+from config import SQL_ALCHEMY_URI
 
 # Create a MetaData instance
 metadata = MetaData(schema="system_config")
@@ -16,19 +15,17 @@ def create_postgres_engine():
     return create_engine(SQL_ALCHEMY_URI, isolation_level='AUTOCOMMIT', pool_size=10)
 
 
-def execute_query(engine: Engine, obj: Select | Update):
+def execute_query(engine: Engine, obj: Select) -> dict:
     with engine.connect() as connection:
         result = connection.execute(obj)
         data = [dict(row) for row in result.mappings()]
-        return data
+    return data
 
 
 def read_org_data() -> Response:
     try:
         engine = create_postgres_engine()
         table = Table('organization', metadata, autoload_with=engine)
-        
-        # Create a Select object
         select_obj = select(table)
         data = execute_query(engine, select_obj)
         return jsonify({"message": data}), 200
@@ -41,14 +38,15 @@ def read_emp_data() -> Response:
     try:
         engine = create_postgres_engine()
         table = Table('employee', metadata, autoload_with=engine)
-
-        # Create a Select object
         select_obj = select(table).order_by(table.c.emp_name)
         data = execute_query(engine, select_obj)
-        return jsonify({"message": data}), 200
-    except Exception as err:
-        print(err)
-        return jsonify({"message": "Error while fetching the record"}), 400
+        res_msg = jsonify({"message": data})
+        res_code = 200
+    except Exception as err: 
+        res_msg = jsonify({"message": "Error while fetching the record"})
+        res_code = 400
+    finally:
+        return res_msg, res_code        
 
 
 
@@ -72,16 +70,20 @@ def add_new_employee() -> Response:
         # Execute the statement
         connection.execute(stmt)
         update_org_count(org_id=emp_data.get('org_id'), employees_count=emp_data.get('employees_count')+1)
-        return jsonify({"message": "Employee added successfully"}), 200
+        res_msg = jsonify({"message": "Employee added successfully"})
+        res_code = 200
     except Exception as err:
         print(err) 
         connection.rollback()
-        return jsonify({"message": "Error while adding a new employee"}), 400
-    finally: connection.close()
+        res_msg = jsonify({"message": "Error while adding a new employee"})
+        res_code = 400
+    finally: 
+        connection.close()
+        return res_msg, res_code
     
 
 
-def update_org_count(org_id: str, employees_count: int):
+def update_org_count(org_id: str, employees_count: int) -> None:
     try:
         engine = create_postgres_engine()
         table = Table('organization', metadata, autoload_with=engine)
@@ -133,7 +135,7 @@ def update_emp_data() -> Response:
         return res_msg, res_code
 
 
-def delete_emp_data():
+def delete_emp_data() -> Response:
     engine = create_postgres_engine()
     connection = engine.connect()
     res_msg = None
