@@ -6,7 +6,7 @@ This project is an admin panel to manage organization and employee details by en
 
 1. Frontend - Angular
 2. Backend - Flask
-3. Database - Postgres
+3. Database - PostgreSQL
 
 # Steps to run
 
