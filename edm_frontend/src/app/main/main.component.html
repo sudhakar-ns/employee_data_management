@@ -26,8 +26,18 @@
     <mat-label>Search</mat-label>
     <input matInput (keyup)="applyFilter($event)" placeholder="Search">
   </mat-form-field>
-  <button mat-raised-button color="primary" (click)="openDialog('Add')">
+  <button class="me-3" mat-raised-button color="primary" (click)="openDialog('Add')">
     <mat-icon>add</mat-icon> Add Employee
+  </button>
+  <!-- Hidden file input -->
+  <input type="file" style="display: none;" #fileInput
+    accept=".csv, application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    (input)="uploadData($event)">
+  <button class="me-3" mat-raised-button color="primary" (click)="fileInput.click()">
+    <mat-icon class="me-0">upload</mat-icon>
+  </button>
+  <button mat-raised-button color="primary" (click)="downloadData()">
+    <mat-icon class="me-0">download</mat-icon>
   </button>
 </span>
 

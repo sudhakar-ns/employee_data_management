@@ -1,8 +1,12 @@
 
 
+import csv, io
+import pandas as pd
+from pandas import DataFrame
+
 from flask import Response, jsonify, request
-from sqlalchemy import (Engine, Insert, MetaData, Select, Table, Update,
-                        create_engine, delete, update)
+from sqlalchemy import (Engine, Insert, MetaData, Select, Table, create_engine,
+                        delete, update)
 from sqlalchemy.sql import select
 
 from config import SQL_ALCHEMY_URI
@@ -20,6 +24,67 @@ def execute_query(engine: Engine, obj: Select) -> dict:
         result = connection.execute(obj)
         data = [dict(row) for row in result.mappings()]
     return data
+
+
+def import_emp_data():
+    try:
+        if 'file' in request.files:
+            uploaded_file = request.files['file']
+            # If it's a CSV file
+            if uploaded_file.filename.endswith('.csv'):
+                df: DataFrame = pd.read_csv(uploaded_file)
+                header = df.columns
+                # Process the DataFrame as needed
+
+            # If it's an Excel file
+            elif uploaded_file.filename.endswith('.xls') or uploaded_file.filename.endswith('.xlsx'):
+                df: DataFrame = pd.read_excel(uploaded_file)
+                header = df.columns
+                # Process the DataFrame as needed
+            """ with open(uploaded_file, mode='r', newline='', encoding='utf-8') as file:
+                csv_reader = csv.reader(file)
+                header = next(csv_reader)  # This reads the first line as the header
+                print(f'header - {header}')
+                for row in csv_reader:
+                    print(row)  # Each row is a list of strings
+            # Truncate table
+            engine = create_postgres_engine()
+            with engine.connect() as connection:
+                connection.execute("TRUNCATE TABLE system_config.employee;")  """
+            
+        return jsonify({"message": "Nice"}), 200
+
+    except Exception as err: 
+        print(err)
+        return jsonify({"message": "Error while fetching the record"}), 400
+
+
+def export_emp_data():
+    try:
+        engine = create_postgres_engine()
+        table = Table('employee', metadata, autoload_with=engine)
+        select_obj = select(table)
+        data = execute_query(engine, select_obj)
+        # Create an in-memory text stream
+        si = io.StringIO()
+        fieldnames = data[0].keys()  # Get field names from first row
+        writer = csv.DictWriter(si, fieldnames=fieldnames)
+
+        writer.writeheader()
+        writer.writerows(data)
+
+        # Get the CSV data
+        output = si.getvalue()
+
+        # Send the CSV file as a response
+        return Response(
+            output,
+            mimetype="text/csv",
+            headers={"Content-Disposition": "attachment;filename=export.csv"}
+        )
+    except Exception as err:
+        print(err)
+        return jsonify({"message": "Error while fetching the record"}), 400
 
 
 def read_org_data() -> Response:
