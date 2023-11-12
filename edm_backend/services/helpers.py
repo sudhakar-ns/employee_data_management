@@ -1,12 +1,13 @@
 
 
-import csv, io
-import pandas as pd
-from pandas import DataFrame
+import csv
+import io
 
+import pandas as pd
 from flask import Response, jsonify, request
+from pandas import DataFrame
 from sqlalchemy import (Engine, Insert, MetaData, Select, Table, create_engine,
-                        delete, update)
+                        delete, text, update)
 from sqlalchemy.sql import select
 
 from config import SQL_ALCHEMY_URI
@@ -15,8 +16,8 @@ from config import SQL_ALCHEMY_URI
 metadata = MetaData(schema="system_config")
 
 
-def create_postgres_engine():
-    return create_engine(SQL_ALCHEMY_URI, isolation_level='AUTOCOMMIT', pool_size=10)
+def create_postgres_engine() -> Engine:
+    return create_engine(SQL_ALCHEMY_URI, pool_size=10)
 
 
 def execute_query(engine: Engine, obj: Select) -> dict:
@@ -26,40 +27,51 @@ def execute_query(engine: Engine, obj: Select) -> dict:
     return data
 
 
-def import_emp_data():
+def validate_columns(origin: list, to_validate: list) -> bool | tuple:
     try:
+        for x, y in zip(origin, to_validate):
+            if x != y: return False, "Columns don't match"
+        return True
+    except Exception as err: return False, err
+
+
+def import_emp_data() -> Response:
+    engine = create_postgres_engine()
+    connection = engine.connect()
+    res_msg = None
+    res_code = 200
+    try:
+        columns_to_validate = ['org_id', 'emp_id', 'emp_name', 'date_of_joining', 'emp_role', 'emp_location']
         if 'file' in request.files:
             uploaded_file = request.files['file']
-            # If it's a CSV file
+            df: DataFrame = None
             if uploaded_file.filename.endswith('.csv'):
-                df: DataFrame = pd.read_csv(uploaded_file)
-                header = df.columns
-                # Process the DataFrame as needed
-
-            # If it's an Excel file
+                df = pd.read_csv(uploaded_file)
+                header = df.columns.to_list()
             elif uploaded_file.filename.endswith('.xls') or uploaded_file.filename.endswith('.xlsx'):
-                df: DataFrame = pd.read_excel(uploaded_file)
-                header = df.columns
-                # Process the DataFrame as needed
-            """ with open(uploaded_file, mode='r', newline='', encoding='utf-8') as file:
-                csv_reader = csv.reader(file)
-                header = next(csv_reader)  # This reads the first line as the header
-                print(f'header - {header}')
-                for row in csv_reader:
-                    print(row)  # Each row is a list of strings
-            # Truncate table
-            engine = create_postgres_engine()
-            with engine.connect() as connection:
-                connection.execute("TRUNCATE TABLE system_config.employee;")  """
-            
-        return jsonify({"message": "Nice"}), 200
-
+                df = pd.read_excel(uploaded_file)
+                header = df.columns.to_list()
+            is_valid = validate_columns(columns_to_validate, header)
+            _type = str(type(is_valid))
+            if 'tuple' in _type: return jsonify({"message": is_valid[1]}), 400
+            connection.execute(text("TRUNCATE TABLE system_config.employee;"))
+            columns = ", ".join(columns_to_validate)
+            table_values = df.values.tolist()
+            for record in table_values:
+                value = str(record)[1: len(str(record))-1]
+                connection.execute(text(f"INSERT INTO system_config.employee ({columns}) VALUES ({value});"))
+            connection.commit()
+            res_msg = jsonify({"message": 'File Imported Successfully'})
     except Exception as err: 
-        print(err)
-        return jsonify({"message": "Error while fetching the record"}), 400
+        connection.rollback()
+        res_msg = jsonify({"message": str(err)})
+        res_code = 400
+    finally:
+        connection.close()
+        return res_msg, res_code
 
 
-def export_emp_data():
+def export_emp_data() -> Response:
     try:
         engine = create_postgres_engine()
         table = Table('employee', metadata, autoload_with=engine)
@@ -108,16 +120,17 @@ def read_emp_data() -> Response:
         res_msg = jsonify({"message": data})
         res_code = 200
     except Exception as err: 
-        res_msg = jsonify({"message": "Error while fetching the record"})
+        res_msg = jsonify({"message": str(err)})
         res_code = 400
     finally:
         return res_msg, res_code        
 
 
-
 def add_new_employee() -> Response:
     engine = create_postgres_engine()
     connection = engine.connect()
+    res_msg = None
+    res_code = 200
     try:
         emp_data = request.get_json()
         table = Table('employee', metadata, autoload_with=engine)
@@ -135,31 +148,32 @@ def add_new_employee() -> Response:
         # Execute the statement
         connection.execute(stmt)
         update_org_count(org_id=emp_data.get('org_id'), employees_count=emp_data.get('employees_count')+1)
+        connection.commit()
         res_msg = jsonify({"message": "Employee added successfully"})
-        res_code = 200
     except Exception as err:
-        print(err) 
         connection.rollback()
-        res_msg = jsonify({"message": "Error while adding a new employee"})
+        res_msg = jsonify({"message": str(err)})
         res_code = 400
     finally: 
         connection.close()
         return res_msg, res_code
-    
 
 
 def update_org_count(org_id: str, employees_count: int) -> None:
+    engine = create_postgres_engine()
+    connection = engine.connect()
     try:
-        engine = create_postgres_engine()
         table = Table('organization', metadata, autoload_with=engine)
         stmt = (
             update(table).
             where(table.c.org_id == org_id).
             values(employees_count = employees_count)
         )
-        
-        with engine.connect() as connection: connection.execute(stmt)
-    except Exception as err: print(err)
+        connection.execute(stmt)
+        connection.commit()
+    except Exception as err:
+        print(err) 
+        connection.rollback()
 
 
 
@@ -185,10 +199,7 @@ def update_emp_data() -> Response:
             where(table.c.emp_id == emp_data.get('emp_id')).
             values(**employee_data)
         )
-        
-        with engine.connect() as connection:
-            connection.execute(stmt)
-        
+        connection.execute(stmt)
         res_msg = jsonify({"message": "Employee updated successfully"})
     except Exception as err:
         print(err) 
@@ -213,6 +224,7 @@ def delete_emp_data() -> Response:
         
         with engine.connect() as connection: connection.execute(stmt)
         update_org_count(org_id=emp_data.get('org_id'), employees_count=emp_data.get('employees_count')-1)
+        connection.commit()
         res_msg = jsonify({"message": "Employee record deleted successfully"})
     except Exception as err:
         print(err) 

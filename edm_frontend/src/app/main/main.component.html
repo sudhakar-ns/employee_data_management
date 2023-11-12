@@ -21,27 +21,31 @@
     </div>
   </mat-card-content>
 </mat-card>
-<span class="d-flex justify-content-between align-items-center mt-4">
-  <mat-form-field class="flex-grow-1 me-4">
+<span class="d-flex justify-content-between align-items-center mt-4 ">
+  <mat-form-field appearance="outline" class="flex-grow-1 me-4">
     <mat-label>Search</mat-label>
-    <input matInput (keyup)="applyFilter($event)" placeholder="Search">
+    <input matInput (keyup)="applyFilter()" [(ngModel)]="searchValue">
+    <button *ngIf="searchValue" mat-icon-button matSuffix (click)="onClearSearch()">
+      <mat-icon>close</mat-icon>
+    </button>
   </mat-form-field>
-  <button class="me-3" mat-raised-button color="primary" (click)="openDialog('Add')">
-    <mat-icon>add</mat-icon> Add Employee
-  </button>
-  <!-- Hidden file input -->
-  <input type="file" style="display: none;" #fileInput
-    accept=".csv, application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    (input)="uploadData($event)">
-  <button class="me-3" mat-raised-button color="primary" (click)="fileInput.click()">
-    <mat-icon class="me-0">upload</mat-icon>
-  </button>
-  <button mat-raised-button color="primary" (click)="downloadData()">
-    <mat-icon class="me-0">download</mat-icon>
-  </button>
+  <span class="d-flex justify-content-end flex-grow-2">
+    <button matTooltip="Add Employee" mat-icon-button color="primary" (click)="openDialog('Add')">
+      <mat-icon>add</mat-icon>
+    </button>
+    <input type="file" style="display: none;" #fileInput
+      accept=".csv, application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      (input)="uploadData($event)">
+    <button matTooltip="Import" mat-icon-button color="primary" (click)="fileInput.click()">
+      <mat-icon>upload</mat-icon>
+    </button>
+    <button matTooltip="Export" mat-icon-button color="primary" (click)="downloadData()">
+      <mat-icon>download</mat-icon>
+    </button>
+  </span>
 </span>
 
-<div class="mat-elevation-z8 overflow-auto employee-table">
+<div class="mat-elevation-z2 overflow-auto employee-table">
   <table mat-table [dataSource]="dataSource" matSort>
 
     <ng-container matColumnDef="emp_name">

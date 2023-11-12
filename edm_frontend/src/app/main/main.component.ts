@@ -29,6 +29,7 @@ export class MainComponent implements OnInit {
   public dataSource!: MatTableDataSource<Employee>;
   public empDataDisplayedColumns: string[] = ['emp_name', 'emp_id', 'date_of_joining', 'emp_role', 'emp_location', 'actions'];
   public canExpandOrgSection = false;
+  public searchValue = '';
   public orgData!: Organization;
   selectedFile: File | null = null;
 
@@ -43,13 +44,17 @@ export class MainComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.loadEmpTableData();
+    this.employeeService.loadOrgDetails().subscribe((data) => {
+      this.orgData = data;
+    });
+  }
+
+  loadEmpTableData(): void {
     this.employeeService.loadEmployeeDetails().subscribe((data) => {
       this.dataSource = new MatTableDataSource<Employee>(data);
       this.dataSource.paginator = this.paginator;
       this.dataSource.sort = this.sort;
-    });
-    this.employeeService.loadOrgDetails().subscribe((data) => {
-      this.orgData = data;
     });
   }
 
@@ -75,7 +80,7 @@ export class MainComponent implements OnInit {
             this.showToast('Employee record deleted successfully', 'success-toast');
           },
           error: (err) => {
-            this.showToast(err.message, 'failure-toast');
+            this.showToast(err.error.message, 'failure-toast');
           }
         });
       }
@@ -102,7 +107,7 @@ export class MainComponent implements OnInit {
             this.showToast('Employee added successfully', 'success-toast');
           },
           error: (err) => {
-            this.showToast(err.message, 'failure-toast');
+            this.showToast(err.error.message, 'failure-toast');
           }
         });
       } else {
@@ -118,16 +123,21 @@ export class MainComponent implements OnInit {
             this.showToast('Employee updated successfully', 'success-toast');
           },
           error: (err) => {
-            this.showToast(err.message, 'failure-toast');
+            this.showToast(err.error.message, 'failure-toast');
           }
         });
       }
     }
   }
 
-  applyFilter(event: any) {
-    const searchedString = event?.target?.value;
-    this.dataSource.filter = searchedString?.trim().toLowerCase();
+  applyFilter(): void {
+    const filterValue = this.searchValue.trim().toLowerCase();
+    this.dataSource.filter = filterValue;
+  }
+
+  onClearSearch(): void {
+    this.searchValue = '';
+    this.applyFilter();
   }
 
   downloadData(): void {
@@ -136,7 +146,7 @@ export class MainComponent implements OnInit {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'export.csv';
+        a.download = 'employee_data.csv';
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -156,7 +166,6 @@ export class MainComponent implements OnInit {
   }
 
   uploadData(event: any): void {
-    console.log({ event });
     this.selectedFile = event.target.files[0];
     if (this.selectedFile) {
       if (this.isValidFileType(this.selectedFile)) {
@@ -164,15 +173,13 @@ export class MainComponent implements OnInit {
         formData.append('file', this.selectedFile, this.selectedFile.name);
 
         this.employeeService.uploadEmployeeDetail(formData).subscribe({
-          next: () => {
-            this.showToast("Invalid file type.", 'failure-toast');
+          next: (data) => {
+            this.showToast(data.message, 'success-toast');
+            this.loadEmpTableData();
           },
           error: (err) => this.showToast(err.error.message, 'failure-toast')
         });
-      } else {
-        this.showToast("Invalid file type.", 'failure-toast');
-        // Handle the invalid file type here
-      }
+      } else this.showToast("Invalid file type.", 'failure-toast');
       this.fileInput.nativeElement.value = '';
     }
   }
@@ -194,7 +201,7 @@ export class MainComponent implements OnInit {
     });
   }
 
-  private updateForm(employeeEntity: Employee) {
+  private updateForm(employeeEntity: Employee): void {
     this.EmployeeFormGroup.patchValue({
       emp_name: employeeEntity.emp_name,
       emp_id: employeeEntity.emp_id,
@@ -211,10 +218,10 @@ export class MainComponent implements OnInit {
     })
   }
 
-  private duplicateIDValidator() {
+  private duplicateIDValidator(): (control: any) => { duplicateId: boolean; } | null {
     return (control: any) => {
-      const value = control?.value;
-      const isDuplicate = this.dataSource?.data?.some(({ emp_id }) => emp_id === value);
+      const value: string = control?.value;
+      const isDuplicate = this.dataSource?.data?.some(({ emp_id }) => emp_id?.toLowerCase() === value?.toLowerCase());
 
       return isDuplicate && this.currentMode.toLowerCase() === 'add' ? { duplicateId: true } : null;
     }
