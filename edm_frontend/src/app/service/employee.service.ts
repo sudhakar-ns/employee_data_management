@@ -1,8 +1,7 @@
-import { Injectable } from '@angular/core';
-import { Observable, map, of } from 'rxjs';
-import { Employee, Organization } from '../models/employee';
 import { HttpClient } from '@angular/common/http';
-import { tap } from 'rxjs/operators';
+import { Injectable } from '@angular/core';
+import { Observable, map } from 'rxjs';
+import { Employee, Organization } from '../models/employee';
 
 @Injectable({
   providedIn: 'root'
