@@ -7,7 +7,7 @@ import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatSort } from '@angular/material/sort';
-import { Employee, Organization } from '../models/employee';
+import { Employee, FilterSelection, FilterStructure, Organization } from '../models/employee';
 import { EmployeeService } from '../service/employee.service';
 
 @Component({
@@ -31,7 +31,11 @@ export class MainComponent implements OnInit {
   public canExpandOrgSection = false;
   public searchValue = '';
   public orgData!: Organization;
-  selectedFile: File | null = null;
+  public location!: FormControl;
+  public multiSelectSource!: FilterStructure[];
+  public selectedFile: File | null = null;
+
+  private clonedEmployeeData!: Employee[];
 
   constructor(public dialog: MatDialog, private employeeService: EmployeeService, private datePipe: DatePipe, private snackbar: MatSnackBar) {
     this.EmployeeFormGroup = new FormGroup({
@@ -44,15 +48,41 @@ export class MainComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.location = new FormControl('');
     this.loadEmpTableData();
     this.employeeService.loadOrgDetails().subscribe((data) => {
       this.orgData = data;
     });
+
+    this.location?.valueChanges?.subscribe((selectedLocations: FilterSelection[]) => {
+      this.filterMatTable(selectedLocations);
+    });
+  }
+
+  filterMatTable(selectedOptions: FilterSelection[]) {
+    if (!selectedOptions || selectedOptions.length === 0) {
+      this.dataSource.data = this.clonedEmployeeData;
+      return;
+    }
+
+    this.dataSource.data = this.clonedEmployeeData.filter(item => selectedOptions.some(option => option.value === item.emp_location && option.groupLabel === item.emp_role))
+  }
+
+  convertToEmpType(text: any): Employee[] {
+    return text as Employee[];
   }
 
   loadEmpTableData(): void {
     this.employeeService.loadEmployeeDetails().subscribe((data) => {
+      this.multiSelectSource = data.reduce((acc: any, cur) => {
+        let { emp_role, ...rest } = cur;
+        if (!acc[(emp_role as string)]) {
+          acc[(emp_role as string)] = [];
+        } acc[(emp_role as string)].push(rest);
+        return acc;
+      }, {});
       this.dataSource = new MatTableDataSource<Employee>(data);
+      this.clonedEmployeeData = this.dataSource.data;
       this.dataSource.paginator = this.paginator;
       this.dataSource.sort = this.sort;
     });
@@ -138,6 +168,10 @@ export class MainComponent implements OnInit {
   onClearSearch(): void {
     this.searchValue = '';
     this.applyFilter();
+  }
+
+  onFilterClearSearch(): void {
+    this.location.reset();
   }
 
   downloadData(): void {

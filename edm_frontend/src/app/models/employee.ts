@@ -14,3 +14,17 @@ export class Organization {
   location?: string;
   employees_count?: number
 }
+
+export type MultiSelect = {
+  role: string;
+  location: string;
+}
+
+export type FilterStructure = {
+  [key: string]: Employee[];
+}
+
+export type FilterSelection = {
+  groupLabel: string;
+  value: string;
+}
