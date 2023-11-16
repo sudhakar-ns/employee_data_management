@@ -38,6 +38,10 @@ This project is an admin panel to manage organization and employee details by en
 
 ![Delete Employee Confirmation Modal](https://github.com/sudhakar-ns/employee_data_management/assets/23113825/f6a50ff6-7914-4ba1-8e19-5c61e8caf7f0)
 
+## Filter, Export and Import Screen
+
+![ilter, Export and Import Screen](https://github.com/sudhakar-ns/employee_data_management/assets/23113825/da2b4e18-b9fb-4994-a813-a4ff0c798317)
+
 
 # Development server
 
