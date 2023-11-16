@@ -1,7 +1,7 @@
 export class Employee {
   emp_name?: string;
-  emp_id?: number;
-  org_id?: number;
+  emp_id?: string;
+  org_id?: string;
   date_of_joining?: string;
   emp_role?: string;
   emp_location?: string;
@@ -10,7 +10,7 @@ export class Employee {
 
 export class Organization {
   name?: string;
-  org_id?: number;
+  org_id?: string;
   location?: string;
   employees_count?: number
 }

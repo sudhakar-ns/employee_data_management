@@ -1,14 +1,14 @@
-import { Component, OnInit, TemplateRef, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatTableDataSource } from '@angular/material/table';
 
+import { DatePipe } from '@angular/common';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
-import { MatSort } from '@angular/material/sort';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatSort } from '@angular/material/sort';
 import { Employee, Organization } from '../models/employee';
 import { EmployeeService } from '../service/employee.service';
-import { DatePipe } from '@angular/common';
 
 @Component({
   selector: 'app-main',
@@ -20,6 +20,7 @@ export class MainComponent implements OnInit {
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild('addEditDialogTemplate') addEditDialogTemplate!: TemplateRef<any>;
   @ViewChild('deleteDialogTemplate') deleteDialogTemplate!: TemplateRef<any>;
+  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
   @ViewChild(MatSort) sort!: MatSort;
 
   public EmployeeFormGroup: FormGroup;
@@ -28,7 +29,9 @@ export class MainComponent implements OnInit {
   public dataSource!: MatTableDataSource<Employee>;
   public empDataDisplayedColumns: string[] = ['emp_name', 'emp_id', 'date_of_joining', 'emp_role', 'emp_location', 'actions'];
   public canExpandOrgSection = false;
+  public searchValue = '';
   public orgData!: Organization;
+  selectedFile: File | null = null;
 
   constructor(public dialog: MatDialog, private employeeService: EmployeeService, private datePipe: DatePipe, private snackbar: MatSnackBar) {
     this.EmployeeFormGroup = new FormGroup({
@@ -41,13 +44,17 @@ export class MainComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.loadEmpTableData();
+    this.employeeService.loadOrgDetails().subscribe((data) => {
+      this.orgData = data;
+    });
+  }
+
+  loadEmpTableData(): void {
     this.employeeService.loadEmployeeDetails().subscribe((data) => {
       this.dataSource = new MatTableDataSource<Employee>(data);
       this.dataSource.paginator = this.paginator;
       this.dataSource.sort = this.sort;
-    });
-    this.employeeService.loadOrgDetails().subscribe((data) => {
-      this.orgData = data;
     });
   }
 
@@ -73,7 +80,7 @@ export class MainComponent implements OnInit {
             this.showToast('Employee record deleted successfully', 'success-toast');
           },
           error: (err) => {
-            this.showToast(err.message, 'failure-toast');
+            this.showToast(err.error.message, 'failure-toast');
           }
         });
       }
@@ -100,7 +107,7 @@ export class MainComponent implements OnInit {
             this.showToast('Employee added successfully', 'success-toast');
           },
           error: (err) => {
-            this.showToast(err.message, 'failure-toast');
+            this.showToast(err.error.message, 'failure-toast');
           }
         });
       } else {
@@ -116,16 +123,65 @@ export class MainComponent implements OnInit {
             this.showToast('Employee updated successfully', 'success-toast');
           },
           error: (err) => {
-            this.showToast(err.message, 'failure-toast');
+            this.showToast(err.error.message, 'failure-toast');
           }
         });
       }
     }
   }
 
-  applyFilter(event: any) {
-    const searchedString = event?.target?.value;
-    this.dataSource.filter = searchedString?.trim().toLowerCase();
+  applyFilter(): void {
+    const filterValue = this.searchValue.trim().toLowerCase();
+    this.dataSource.filter = filterValue;
+  }
+
+  onClearSearch(): void {
+    this.searchValue = '';
+    this.applyFilter();
+  }
+
+  downloadData(): void {
+    this.employeeService.downloadEmployeeDetail().subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'employee_data.csv';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        a.remove();
+      },
+      error: (err) => console.log({ err })
+    });
+  }
+
+  isValidFileType(file: File): boolean {
+    const validTypes = [
+      'text/csv',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ];
+    return validTypes.includes(file.type);
+  }
+
+  uploadData(event: any): void {
+    this.selectedFile = event.target.files[0];
+    if (this.selectedFile) {
+      if (this.isValidFileType(this.selectedFile)) {
+        const formData = new FormData();
+        formData.append('file', this.selectedFile, this.selectedFile.name);
+
+        this.employeeService.uploadEmployeeDetail(formData).subscribe({
+          next: (data) => {
+            this.showToast(data.message, 'success-toast');
+            this.loadEmpTableData();
+          },
+          error: (err) => this.showToast(err.error.message, 'failure-toast')
+        });
+      } else this.showToast("Invalid file type.", 'failure-toast');
+      this.fileInput.nativeElement.value = '';
+    }
   }
 
   openDialog(title: string, employee?: Employee): void {
@@ -145,7 +201,7 @@ export class MainComponent implements OnInit {
     });
   }
 
-  private updateForm(employeeEntity: Employee) {
+  private updateForm(employeeEntity: Employee): void {
     this.EmployeeFormGroup.patchValue({
       emp_name: employeeEntity.emp_name,
       emp_id: employeeEntity.emp_id,
@@ -162,10 +218,10 @@ export class MainComponent implements OnInit {
     })
   }
 
-  private duplicateIDValidator() {
+  private duplicateIDValidator(): (control: any) => { duplicateId: boolean; } | null {
     return (control: any) => {
-      const value = control?.value;
-      const isDuplicate = this.dataSource?.data?.some(({ emp_id }) => emp_id === value);
+      const value: string = control?.value;
+      const isDuplicate = this.dataSource?.data?.some(({ emp_id }) => emp_id?.toLowerCase() === value?.toLowerCase());
 
       return isDuplicate && this.currentMode.toLowerCase() === 'add' ? { duplicateId: true } : null;
     }

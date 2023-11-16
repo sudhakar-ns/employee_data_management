@@ -33,3 +33,13 @@ def update_employee():
 @edm_route.route('/remove_employee', methods=['POST'])
 def remove_employee():
     return delete_emp_data()
+
+
+@edm_route.route('/insert_employee_data', methods=['POST'])
+def insert_employee_data():
+    return import_emp_data()
+
+
+@edm_route.route('/extract_employee_data', methods=['GET'])
+def extract_employee_data():
+    return export_emp_data()
